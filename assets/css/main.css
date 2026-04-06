@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply font-sans antialiased text-gray-900 bg-gray-50;
+  }
+
+  :root {
+    direction: rtl;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg
+           bg-primary-600 text-white hover:bg-primary-700
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-colors duration-150;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg
+           bg-white text-gray-700 border border-gray-300 hover:bg-gray-50
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-colors duration-150;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg
+           bg-red-600 text-white hover:bg-red-700
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-colors duration-150;
+  }
+
+  .input-base {
+    @apply block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm
+           placeholder:text-gray-400
+           focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500
+           disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500;
+  }
+
+  .card {
+    @apply bg-white rounded-xl border border-gray-200 shadow-sm;
+  }
+}
