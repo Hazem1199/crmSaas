@@ -1,8 +1,8 @@
 // PUT /api/[workspace]/labels/:labelId
-import { requireWorkspaceAdmin } from '../../../utils/workspace-request'
+import { requireWorkspacePermission } from '../../../utils/workspace-request'
 
 export default defineEventHandler(async (event) => {
-  const { workspaceId } = await requireWorkspaceAdmin(event)
+  const { workspaceId } = await requireWorkspacePermission(event, 'labels.manage')
   const labelId = getRouterParam(event, 'labelId')!
   const svc = useServiceRoleClient()
 

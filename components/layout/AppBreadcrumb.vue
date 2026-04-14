@@ -28,7 +28,8 @@ const breadcrumbMap: Record<string, string> = {
   statuses:   'حالات العميل',
   labels:     'التصنيفات',
   campaigns:  'الحملات الإعلانية',
-  team:       'الفريق',
+  team:       'الأعضاء',
+  roles:      'الأدوار',
   sms:        'إعدادات SMS',
 }
 

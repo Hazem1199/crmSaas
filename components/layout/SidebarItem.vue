@@ -1,5 +1,6 @@
 <template>
   <NuxtLink
+    v-if="item.to"
     :to="`/${workspaceSlug}/${item.to}`"
     class="flex items-center gap-3 px-3 py-2.5 rounded-lg mx-2 transition-all duration-150 group"
     :class="[
@@ -30,6 +31,7 @@ import {
   HomeIcon, UsersIcon, ChartBarIcon,
   DocumentTextIcon, Cog6ToothIcon, TrashIcon,
   BellIcon, BuildingOffice2Icon, MegaphoneIcon,
+  LockClosedIcon,
 } from '@heroicons/vue/24/outline'
 import type { NavItem } from '~/types'
 
@@ -42,7 +44,7 @@ const route = useRoute()
 const workspaceSlug = computed(() => route.params.workspace as string)
 
 const isActive = computed(() =>
-  route.path.includes(`/${workspaceSlug.value}/${props.item.to}`)
+  props.item.to ? route.path.includes(`/${workspaceSlug.value}/${props.item.to}`) : false,
 )
 
 const iconMap: Record<string, unknown> = {
@@ -55,5 +57,6 @@ const iconMap: Record<string, unknown> = {
   'bell': BellIcon,
   'building': BuildingOffice2Icon,
   'megaphone': MegaphoneIcon,
+  'lock': LockClosedIcon,
 }
 </script>

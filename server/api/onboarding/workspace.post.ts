@@ -70,21 +70,6 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const { data: existingMember } = await svc
-    .from('workspace_members')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('is_active', true)
-    .limit(1)
-    .maybeSingle()
-
-  if (existingMember) {
-    throw createError({
-      statusCode: 409,
-      message: 'أنت مرتبط بمساحة عمل بالفعل',
-    })
-  }
-
   const { data: ws, error: wsErr } = await svc
     .from('workspaces')
     .insert({ name, slug })
@@ -105,12 +90,32 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, message: 'فشل إنشاء مساحة العمل' })
   }
 
+  const { error: seedErr } = await svc.rpc('seed_workspace_roles', {
+    p_workspace_id: ws.id,
+  })
+  if (seedErr) {
+    await svc.from('workspaces').delete().eq('id', ws.id)
+    throw createError({ statusCode: 500, message: seedErr.message })
+  }
+
+  const { data: ownerRole, error: ownerRoleErr } = await svc
+    .from('workspace_roles')
+    .select('id')
+    .eq('workspace_id', ws.id)
+    .eq('slug', 'owner')
+    .single()
+
+  if (ownerRoleErr || !ownerRole) {
+    await svc.from('workspaces').delete().eq('id', ws.id)
+    throw createError({ statusCode: 500, message: ownerRoleErr?.message ?? 'فشل إنشاء دور المالك' })
+  }
+
   const { error: memErr } = await svc
     .from('workspace_members')
     .insert({
       workspace_id: ws.id,
       user_id: user.id,
-      role: 'owner',
+      workspace_role_id: ownerRole.id,
       is_active: true,
     })
 

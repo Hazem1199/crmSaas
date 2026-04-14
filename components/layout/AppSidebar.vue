@@ -24,7 +24,13 @@
 
     <!-- Navigation -->
     <nav class="flex-1 py-3 overflow-y-auto overflow-x-hidden space-y-0.5">
-      <template v-for="item in filteredNavItems" :key="item.to">
+      <template v-for="item in navPart1Filtered" :key="item.to">
+        <SidebarItem :item="item" :collapsed="collapsed" />
+      </template>
+
+      <SidebarNavGroup :item="teamGroup" :collapsed="collapsed" />
+
+      <template v-for="item in navPart2Filtered" :key="item.to">
         <SidebarItem :item="item" :collapsed="collapsed" />
       </template>
 
@@ -91,13 +97,26 @@ const mainNavItems: NavItem[] = [
   { label: 'الفواتير',          icon: 'document-text',  to: 'invoices',   permission: 'view_invoices' },
 ]
 
+const teamGroup = {
+  label: 'فريق العمل',
+  icon: 'user-group',
+  to: 'team',
+  permission: null,
+  children: [
+    { label: 'الأعضاء', icon: 'users', to: 'team', permission: null },
+    { label: 'الأدوار', icon: 'lock', to: 'roles', permission: 'roles.manage' },
+  ],
+} as NavItem & { children: NavItem[] }
+
+const navPart1 = computed(() => mainNavItems.filter((i) => ['dashboard', 'leads', 'campaigns'].includes(i.to!)))
+const navPart2 = computed(() => mainNavItems.filter((i) => ['reports', 'invoices'].includes(i.to!)))
+
 const settingsItem: NavItem = {
   label: 'الإعدادات', icon: 'cog', to: 'settings', permission: 'manage_settings',
 }
 
-const filteredNavItems = computed(() =>
-  mainNavItems.filter(item => can(item.permission))
-)
+const navPart1Filtered = computed(() => navPart1.value.filter(item => can(item.permission)))
+const navPart2Filtered = computed(() => navPart2.value.filter(item => can(item.permission)))
 
 const roleLabels: Record<string, string> = {
   owner:                'مالك',

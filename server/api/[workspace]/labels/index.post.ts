@@ -1,8 +1,8 @@
 // POST /api/[workspace]/labels — إنشاء تصنيف في المساحة
-import { requireWorkspaceAdmin } from '../../../utils/workspace-request'
+import { requireWorkspacePermission } from '../../../utils/workspace-request'
 
 export default defineEventHandler(async (event) => {
-  const { workspaceId } = await requireWorkspaceAdmin(event)
+  const { workspaceId } = await requireWorkspacePermission(event, 'labels.manage')
   const body = await readBody(event).catch(() => ({})) as { name?: string; color?: string }
   const name = typeof body.name === 'string' ? body.name.trim() : ''
   if (!name) throw createError({ statusCode: 400, message: 'اسم التصنيف مطلوب' })

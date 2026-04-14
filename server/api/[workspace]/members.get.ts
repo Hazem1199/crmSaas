@@ -1,4 +1,4 @@
-// GET /api/[workspace]/members — أعضاء مساحة العمل مع أسماء البروفايل (للقوائم والتعيين)
+// GET /api/[workspace]/members — أعضاء مساحة العمل مع أسماء البروفايل والدور
 import { requireWorkspaceMember } from '../../utils/workspace-request'
 
 export default defineEventHandler(async (event) => {
@@ -7,7 +7,16 @@ export default defineEventHandler(async (event) => {
 
   const { data: members, error } = await svc
     .from('workspace_members')
-    .select('id, workspace_id, user_id, role, joined_at, is_active, invited_by')
+    .select(`
+      id,
+      workspace_id,
+      user_id,
+      workspace_role_id,
+      joined_at,
+      is_active,
+      invited_by,
+      workspace_roles ( id, name, slug, is_owner_role )
+    `)
     .eq('workspace_id', workspaceId)
     .eq('is_active', true)
     .order('joined_at')

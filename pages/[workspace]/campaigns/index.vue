@@ -220,7 +220,7 @@
         </div>
 
         <div class="min-h-0 flex-1 overflow-y-auto p-4 space-y-4">
-          <div>
+          <div v-if="showCampaignSelect">
             <label class="block text-sm font-medium text-gray-700 mb-1.5">الحملة</label>
             <select
               v-model="pickerCampaignId"
@@ -390,6 +390,7 @@ const form = reactive({
 })
 
 const labelPopOpen = ref(false)
+const showCampaignSelect = ref(false)
 const labelPopPanelRef = ref<HTMLElement | null>(null)
 const labelPopAnchorEl = ref<HTMLElement | null>(null)
 const labelPopStyle = ref<Record<string, string>>({
@@ -480,6 +481,7 @@ function onWindowResize() {
 
 function closeLabelPicker() {
   labelPopOpen.value = false
+  showCampaignSelect.value = false
 }
 
 function openModal(row?: Campaign) {
@@ -621,6 +623,7 @@ function openLabelPicker(campaignId: string | null, e: Event) {
   const target = (e?.currentTarget as HTMLElement) ?? null
   labelPopAnchorEl.value = target
   applyPopoverPosition()
+  showCampaignSelect.value = !campaignId
 
   const first = campaigns.value[0]?.id ?? ''
   pickerCampaignId.value = campaignId ?? first

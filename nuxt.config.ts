@@ -28,9 +28,14 @@ export default defineNuxtConfig({
   runtimeConfig: {
     supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY,
     facebookVerifyToken: process.env.FACEBOOK_VERIFY_TOKEN,
+    /** إرسال رابط الدعوة للمستخدم المسجّل مسبقاً (اختياري) */
+    resendApiKey: process.env.RESEND_API_KEY,
+    emailFrom: process.env.EMAIL_FROM,
     public: {
       supabaseUrl: process.env.SUPABASE_URL,
       supabaseKey: process.env.SUPABASE_KEY,
+      /** للروابط في دعوات البريد (inviteUserByEmail redirect) */
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || '',
     },
   },
 

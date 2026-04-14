@@ -7,14 +7,19 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
   const currentWorkspace = ref<Workspace | null>(null)
   const myMembership = ref<WorkspaceMember | null>(null)
+  const myPermissions = ref<Set<string>>(new Set())
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  const myRole = computed<MemberRole | null>(() => myMembership.value?.role ?? null)
+  const myRole = computed<MemberRole | string | null>(() => {
+    const slug = myMembership.value?.workspace_roles?.slug
+    return slug ?? null
+  })
 
-  const isOwnerOrAdmin = computed(() =>
-    myRole.value === 'owner' || myRole.value === 'admin'
-  )
+  const isOwnerOrAdmin = computed(() => {
+    const slug = myMembership.value?.workspace_roles?.slug
+    return slug === 'owner' || slug === 'admin'
+  })
 
   const fetchWorkspace = async (slug: string): Promise<boolean> => {
     loading.value = true
@@ -38,17 +43,41 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       if (user.value) {
         const { data: membership } = await supabase
           .from('workspace_members')
-          .select('*')
+          .select(`
+            *,
+            workspace_roles ( id, name, slug, is_owner_role, is_default_invite_role, distribute_customers_to_role )
+          `)
           .eq('workspace_id', ws.id)
           .eq('user_id', user.value.id)
-          .eq('is_active', true)
-          .single()
+          .maybeSingle()
 
-        myMembership.value = membership as WorkspaceMember | null
+        if (membership) {
+          const m = membership as WorkspaceMember & { workspace_roles?: WorkspaceMember['workspace_roles'] | WorkspaceMember['workspace_roles'][] }
+          const wr = m.workspace_roles
+          m.workspace_roles = Array.isArray(wr) ? wr[0] : wr
+          myMembership.value = m as WorkspaceMember
+        }
+        else {
+          myMembership.value = null
+        }
+
+        if (myMembership.value?.is_active) {
+          try {
+            const res = await $fetch<{ permissions: string[] }>(`/api/${slug}/permissions/me`)
+            myPermissions.value = new Set(res.permissions ?? [])
+          }
+          catch {
+            myPermissions.value = new Set()
+          }
+        }
+        else {
+          myPermissions.value = new Set()
+        }
       }
 
       return true
-    } finally {
+    }
+    finally {
       loading.value = false
     }
   }
@@ -56,11 +85,13 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const clearWorkspace = () => {
     currentWorkspace.value = null
     myMembership.value = null
+    myPermissions.value = new Set()
   }
 
   return {
     currentWorkspace,
     myMembership,
+    myPermissions,
     myRole,
     isOwnerOrAdmin,
     loading,

@@ -3,6 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "migrate:rbac": "node scripts/apply-migrations-008-009.mjs",
+    "migrate:invites": "node scripts/apply-migrations-010-011.mjs",
     "cleanup": "nuxi cleanup",
     "build": "nuxt build",
     "dev": "nuxt dev",

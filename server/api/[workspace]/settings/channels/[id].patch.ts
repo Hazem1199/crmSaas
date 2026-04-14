@@ -1,8 +1,8 @@
 // PATCH /api/[workspace]/settings/channels/:id
-import { requireWorkspaceAdmin } from '../../../../utils/workspace-request'
+import { requireWorkspacePermission } from '../../../../utils/workspace-request'
 
 export default defineEventHandler(async (event) => {
-  const { workspaceId } = await requireWorkspaceAdmin(event)
+  const { workspaceId } = await requireWorkspacePermission(event, 'settings.edit_channels')
   const id = getRouterParam(event, 'id')!
   const svc = useServiceRoleClient()
 

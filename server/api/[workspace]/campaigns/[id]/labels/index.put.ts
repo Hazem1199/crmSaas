@@ -1,10 +1,10 @@
 // PUT /api/[workspace]/campaigns/:id/labels — استبدال مجموعة التصنيفات المربوطة بالحملة
-import { requireWorkspaceAdmin } from '../../../../../utils/workspace-request'
+import { requireWorkspacePermission } from '../../../../../utils/workspace-request'
 import { assertCampaignInWorkspace } from '../../../../../utils/campaign-scope'
 import { assertLabelsBelongToWorkspace } from '../../../../../utils/label-scope'
 
 export default defineEventHandler(async (event) => {
-  const { workspaceId } = await requireWorkspaceAdmin(event)
+  const { workspaceId } = await requireWorkspacePermission(event, 'campaigns.manage')
   const campaignId = getRouterParam(event, 'id')!
   await assertCampaignInWorkspace(campaignId, workspaceId)
 

@@ -1,9 +1,9 @@
 // POST /api/[workspace]/campaigns
-import { requireWorkspaceAdmin } from '../../../utils/workspace-request'
+import { requireWorkspacePermission } from '../../../utils/workspace-request'
 import { replaceCampaignAssignments } from '../../../utils/campaign-assignments'
 
 export default defineEventHandler(async (event) => {
-  const { workspaceId } = await requireWorkspaceAdmin(event)
+  const { workspaceId } = await requireWorkspacePermission(event, 'campaigns.manage')
   const svc = useServiceRoleClient()
   const body = await readBody(event).catch(() => ({})) as {
     name?: string

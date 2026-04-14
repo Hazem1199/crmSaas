@@ -1,8 +1,7 @@
 import type { H3Event } from 'h3'
 import { serverSupabaseClient } from '#supabase/server'
 import { getWorkspaceIdBySlug } from './supabase'
-import { requireMembership, requireRole } from './permissions'
-import type { MemberRole } from '~/types'
+import { requireMembership, requirePermission } from './permissions'
 
 /**
  * مستخدم مسجّل + workspace_id من الـ slug في المسار
@@ -24,11 +23,16 @@ export async function requireWorkspaceMember(event: H3Event) {
   return ctx
 }
 
-export async function requireWorkspaceAdmin(
-  event: H3Event,
-  allowedRoles: MemberRole[] = ['owner', 'admin'],
-) {
+/**
+ * التحقق من صلاحية محددة في مساحة العمل (مفاتيح permission_definitions)
+ */
+export async function requireWorkspacePermission(event: H3Event, permissionKey: string) {
   const ctx = await requireWorkspaceContext(event)
-  await requireRole(ctx.user.id, ctx.workspaceId, allowedRoles)
+  await requirePermission(ctx.user.id, ctx.workspaceId, permissionKey)
   return ctx
+}
+
+/** @deprecated استخدم requireWorkspacePermission مع المفتاح المناسب (مثل campaigns.manage) */
+export async function requireWorkspaceAdmin(event: H3Event) {
+  return requireWorkspacePermission(event, 'workspace.manage_settings')
 }

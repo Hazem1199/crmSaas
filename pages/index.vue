@@ -3,6 +3,57 @@
     <p v-if="loading" class="text-gray-500">جاري التحميل...</p>
 
     <div
+      v-else-if="routeError"
+      class="w-full max-w-md rounded-xl border border-red-200 bg-red-50 p-8 shadow-sm text-center"
+    >
+      <p class="text-sm text-red-800 mb-4">{{ routeError }}</p>
+      <button
+        type="button"
+        class="text-primary-600 text-sm font-medium hover:underline"
+        @click="retryMine"
+      >
+        إعادة المحاولة
+      </button>
+    </div>
+
+    <div
+      v-else-if="showInactiveOnly"
+      class="w-full max-w-md rounded-xl border border-amber-200 bg-amber-50 p-8 shadow-sm text-center"
+    >
+      <h1 class="text-lg font-bold text-amber-900 mb-2">لا توجد مساحات فعّالة</h1>
+      <p class="text-sm text-amber-800 mb-4">
+        عضويتك في المساحات التالية غير فعّالة. تواصل مع مسؤول المساحة لتفعيلها.
+      </p>
+      <ul class="text-sm text-amber-900 text-right list-disc list-inside mb-6">
+        <li v-for="w in inactiveWorkspaces" :key="w.id">{{ w.name }}</li>
+      </ul>
+      <NuxtLink to="/auth/login" class="text-primary-600 text-sm font-medium hover:underline">
+        العودة لتسجيل الدخول
+      </NuxtLink>
+    </div>
+
+    <div
+      v-else-if="showWorkspacePicker"
+      class="w-full max-w-lg rounded-xl border border-gray-200 bg-white p-8 shadow-sm"
+    >
+      <h1 class="text-xl font-bold text-gray-900 mb-1">اختر مساحة العمل</h1>
+      <p class="text-sm text-gray-500 mb-6">أنت عضو في أكثر من مساحة — اختر أين تريد العمل الآن.</p>
+
+      <div class="space-y-3">
+        <button
+          v-for="w in workspaceChoices"
+          :key="w.id"
+          type="button"
+          class="w-full flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3 text-right hover:bg-gray-50 transition-colors"
+          @click="pickWorkspace(w.slug)"
+        >
+          <span class="font-medium text-gray-900">{{ w.name }}</span>
+          <span class="text-xs text-gray-400">{{ w.slug }}</span>
+        </button>
+      </div>
+    </div>
+
+    <div
       v-else-if="showOnboarding"
       class="w-full max-w-md rounded-xl border border-gray-200 bg-white p-8 shadow-sm"
     >
@@ -51,50 +102,104 @@ definePageMeta({
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()
 
+const LAST_WS_KEY = 'crm_last_workspace_slug'
+
 const loading = ref(true)
 const showOnboarding = ref(false)
+const showWorkspacePicker = ref(false)
+const showInactiveOnly = ref(false)
+const workspaceChoices = ref<{ id: string; name: string; slug: string }[]>([])
+const inactiveWorkspaces = ref<{ id: string; name: string; slug: string }[]>([])
 
 const workspaceName = ref('')
 const workspaceSlug = ref('')
 const fieldErrors = reactive({ name: '', slug: '' })
 const formError = ref('')
 const submitting = ref(false)
+const routeError = ref('')
+
+function pickWorkspace(slug: string) {
+  try {
+    localStorage.setItem(LAST_WS_KEY, slug)
+  }
+  catch {
+    // ignore
+  }
+  void navigateTo(`/${slug}/dashboard`, { replace: true })
+}
 
 async function goToWorkspace() {
+  routeError.value = ''
+
   if (!user.value) {
     loading.value = false
     await navigateTo('/auth/login', { replace: true })
     return
   }
 
-  const { data: membership } = await supabase
-    .from('workspace_members')
-    .select('workspace_id')
-    .eq('user_id', user.value.id)
-    .eq('is_active', true)
-    .limit(1)
-    .maybeSingle()
+  loading.value = true
 
-  if (!membership) {
+  try {
+    const mine = await $fetch<{
+      active: { id: string; name: string; slug: string }[]
+      inactive: { id: string; name: string; slug: string }[]
+    }>('/api/workspaces/mine')
+
+    const active = mine.active ?? []
+    const inactive = mine.inactive ?? []
+
+    if (active.length === 0) {
+      if (inactive.length > 0) {
+        inactiveWorkspaces.value = inactive
+        showInactiveOnly.value = true
+        loading.value = false
+        return
+      }
+      loading.value = false
+      showOnboarding.value = true
+      return
+    }
+
+    if (active.length === 1) {
+      pickWorkspace(active[0].slug)
+      return
+    }
+
+    let lastSlug = ''
+    try {
+      lastSlug = localStorage.getItem(LAST_WS_KEY) ?? ''
+    }
+    catch {
+      lastSlug = ''
+    }
+    const sorted = [...active]
+    if (lastSlug) {
+      sorted.sort((a, b) => {
+        if (a.slug === lastSlug) return -1
+        if (b.slug === lastSlug) return 1
+        return 0
+      })
+    }
+
+    workspaceChoices.value = sorted
     loading.value = false
-    showOnboarding.value = true
-    return
+    showWorkspacePicker.value = true
   }
-
-  const { data: ws } = await supabase
-    .from('workspaces')
-    .select('slug')
-    .eq('id', membership.workspace_id)
-    .is('deleted_at', null)
-    .maybeSingle()
-
-  if (ws?.slug) {
-    await navigateTo(`/${ws.slug}/dashboard`, { replace: true })
-    return
+  catch (e: unknown) {
+    loading.value = false
+    const err = e as { data?: { message?: string }; message?: string }
+    routeError.value =
+      err?.data?.message ?? err?.message ?? 'تعذر تحميل مساحات العمل. تحقق من الاتصال وحاول مرة أخرى.'
   }
+}
 
-  loading.value = false
-  showOnboarding.value = true
+async function retryMine() {
+  routeError.value = ''
+  loading.value = true
+  showOnboarding.value = false
+  showWorkspacePicker.value = false
+  showInactiveOnly.value = false
+  await goToWorkspace()
 }
 
 async function submitWorkspace() {
@@ -122,7 +227,7 @@ async function submitWorkspace() {
       body,
     })
 
-    await navigateTo(`/${res.slug}/dashboard`, { replace: true })
+    pickWorkspace(res.slug)
   }
   catch (e: unknown) {
     const err = e as { data?: { message?: string }; message?: string }
@@ -140,6 +245,6 @@ watch(
     if (!u) return
     await goToWorkspace()
   },
-  { immediate: true }
+  { immediate: true },
 )
 </script>

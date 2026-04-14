@@ -1,9 +1,9 @@
 // PUT /api/[workspace]/campaigns/:id
-import { requireWorkspaceAdmin } from '../../../utils/workspace-request'
+import { requireWorkspacePermission } from '../../../utils/workspace-request'
 import { replaceCampaignAssignments } from '../../../utils/campaign-assignments'
 
 export default defineEventHandler(async (event) => {
-  const { workspaceId } = await requireWorkspaceAdmin(event)
+  const { workspaceId } = await requireWorkspacePermission(event, 'campaigns.manage')
   const id = getRouterParam(event, 'id')!
   const svc = useServiceRoleClient()
 

@@ -1,8 +1,8 @@
 // POST /api/[workspace]/settings/channels — إضافة قناة (اسم فقط؛ النوع custom)
-import { requireWorkspaceAdmin } from '../../../utils/workspace-request'
+import { requireWorkspacePermission } from '../../../utils/workspace-request'
 
 export default defineEventHandler(async (event) => {
-  const { workspaceId } = await requireWorkspaceAdmin(event)
+  const { workspaceId } = await requireWorkspacePermission(event, 'settings.edit_channels')
   const body = await readBody(event).catch(() => ({})) as { name?: string }
   const name = typeof body.name === 'string' ? body.name.trim() : ''
   if (!name) {

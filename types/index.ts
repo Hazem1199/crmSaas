@@ -2,6 +2,7 @@
 // Global TypeScript Types for CRM SaaS
 // =========================================================
 
+/** قيم slug للأدوار المعرّفة افتراضياً (تطابق workspace_roles.slug) */
 export type MemberRole = 'owner' | 'admin' | 'agent' | 'reservation_manager'
 export type InvoiceStatus = 'pending' | 'partial' | 'paid' | 'overdue'
 export type MessageType = 'sms' | 'email'
@@ -27,15 +28,41 @@ export interface Workspace {
   deleted_at: string | null
 }
 
+export interface WorkspaceRole {
+  id: string
+  workspace_id: string
+  name: string
+  slug: string
+  is_owner_role: boolean
+  is_default_invite_role: boolean
+  distribute_customers_to_role: boolean
+  created_at: string
+  /** مُعبأ من قائمة الأدوار فقط */
+  member_count?: number
+}
+
 export interface WorkspaceMember {
   id: string
   workspace_id: string
   user_id: string
-  role: MemberRole
+  workspace_role_id: string
   is_active: boolean
   invited_by: string | null
   joined_at: string
+  /** مُعبأ من join workspace_roles */
+  workspace_roles?: Pick<WorkspaceRole, 'id' | 'name' | 'slug' | 'is_owner_role'>
   profile?: Profile
+}
+
+/** صف دعوة من API قائمة الدعوات */
+export interface WorkspaceInvitationRow {
+  id: string
+  invitee_email: string
+  status: 'pending' | 'accepted' | 'expired' | 'cancelled'
+  created_at: string
+  expires_at: string
+  accepted_at: string | null
+  role?: Pick<WorkspaceRole, 'id' | 'name' | 'slug'> | null
 }
 
 export interface Channel {
@@ -225,7 +252,8 @@ export interface PaginatedResponse<T> {
 export interface NavItem {
   label: string
   icon: string
-  to: string
+  /** للعناصر الفرعية فقط؛ المجموعات قد لا تحتاج رابطًا */
+  to?: string
   permission: string | null
   badge?: number | string
   children?: NavItem[]
